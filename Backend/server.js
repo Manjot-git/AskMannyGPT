@@ -4,21 +4,29 @@ import cors from "cors";
 import mongoose from "mongoose";
 import chatRoutes from "./routes/chat.js";
 
+import authRoutes from "./routes/auth.js"; // ✅ for signup/login
+
 
 const app = express();
 const PORT = 8080;
 
+// --- Middleware ---
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173", // frontend origin
+}));
 
+// --- Routes ---
 app.use("/api", chatRoutes);
+app.use("/api/auth", authRoutes); // ✅ auth endpoints
 
-
+// --- Start server ---
 app.listen(PORT, () => {
   console.log(`Server running on ${PORT}`);
   connectDB();
 });
 
+// --- MongoDB Connection ---
 const connectDB = async() =>{
   try {
     await mongoose.connect(process.env.MONGODB_URL);

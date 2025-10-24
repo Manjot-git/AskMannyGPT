@@ -2,13 +2,20 @@ import "./Sidebar.css";
 import { useContext, useEffect } from "react";
 import { MyContext } from "./MyContext.jsx";
 import { v1 as uuidv1 } from "uuid"; 
+import { useNavigate } from "react-router-dom"; 
 
 function Sidebar(){
+    const navigate = useNavigate();  
     const {allThreads, setAllThreads, currThreadId, setNewChat, setPrompt, setReply, setCurrThreadId, setPrevChats} = useContext(MyContext);
+
+    const token = localStorage.getItem("token"); //🆕 check login
 
     const getAllThreads = async () => {
         try {
-            const response = await fetch("http://localhost:8080/api/thread");
+            if (!token) return; // skip if guest
+            const response = await fetch("http://localhost:8080/api/thread" , {
+            headers: { Authorization: `Bearer ${token}` }
+            });
             const res = await response.json();
             //threadId, title
             const filterData = res.map(thread => ({threadId: thread.threadId, title: thread.title}));
@@ -20,6 +27,7 @@ function Sidebar(){
     };
 
     useEffect(() =>{
+        if (!token) return;
         getAllThreads();
     }, [currThreadId]);
 
@@ -31,12 +39,18 @@ function Sidebar(){
         setPrevChats([]);
     };
 
-
     const changeThread = async (newThreadId) =>{
+        if (!token) {
+        alert("Please log in to view this thread!");
+        window.location.href = "/login"; // redirect guest
+        return;
+    }
         setCurrThreadId(newThreadId);
 
         try {
-            const response = await fetch(`http://localhost:8080/api/thread/${newThreadId}`);
+            const response = await fetch(`http://localhost:8080/api/thread/${newThreadId}` , {
+            headers: { Authorization: `Bearer ${token}` } // 🆕 include token
+            });
             const res = await response.json();
             console.log(res);
             setPrevChats(res);
@@ -48,8 +62,15 @@ function Sidebar(){
     }
 
     const deleteThread = async (threadId) =>{
+         if (!token) {
+            alert("Please log in to delete a thread!");
+            return;
+        }
+
         try {
-            const response = await fetch(`http://localhost:8080/api/thread/${threadId}`, {method: "DELETE"});
+            const response = await fetch(`http://localhost:8080/api/thread/${threadId}`, {method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` }
+            });
             const res = await response.json();
             console.log(res);
 
@@ -76,7 +97,8 @@ function Sidebar(){
 
                 {/* {history} */}
                 <ul className="history">
-                    {
+                    {token ? (
+
                         allThreads?.map((thread, idx) => (
                             <li key={idx}
                                 onClick={(e) => changeThread(thread.threadId)}
@@ -91,8 +113,13 @@ function Sidebar(){
                                 ></i>
                             </li>
                         ))
-                    }
-                </ul>
+                    ) : (
+                            <li className="guest-placeholder" onClick={() => navigate("/login")}>
+                                <i className="fa-solid fa-user-lock"></i> 
+                                <span>Login to view chats</span>
+                            </li>
+                        )}
+                    </ul>
 
                 {/* {sign} */}
                 <div className="sign">

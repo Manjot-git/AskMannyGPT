@@ -1,40 +1,72 @@
 import "./ChatWindow.css";
 import Chat from "./Chat.jsx";
 import { MyContext } from "./MyContext.jsx";
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect, useRef } from "react";
 import { ScaleLoader } from "react-spinners";
+import { sendMessage, getUserThreads } from "./utils/api"; // 🆕 import backend helpers
 
 function ChatWindow(){
     const {prompt, setPrompt, reply, setReply, currThreadId, prevChats, setPrevChats, setNewChat} = useContext(MyContext);
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false); 
 
+    const token = localStorage.getItem("token") || null;// 🆕 detect login state
+
+    // 🆕 If logged in → fetch user's old threads
+    useEffect(() => {
+        const fetchThreads = async () => {
+        if (token) {
+            try {
+            const res = await getUserThreads(token);
+            if (res.threads) {
+                console.log("Fetched user threads:", res.threads);
+            }
+            } catch (err) {
+            console.error("Error fetching threads:", err);
+            }
+        }
+        };
+        fetchThreads();
+    }, [token]);
+  
+    const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [prevChats]); // scrolls whenever new message arrives
+
+
     const getReply = async () => {
         setLoading(true);
         setNewChat(false);
 
-        const options = {
-            method: "POST",
-            headers: {
-                "Content-Type" : "application/json"
-            },
-            body: JSON.stringify({
-                message: prompt,
-                threadId: currThreadId
-            }) 
-        };
+        // const options = {
+        //     method: "POST",
+        //     headers: {
+        //         "Content-Type" : "application/json"
+        //     },
+        //     body: JSON.stringify({
+        //         message: prompt,
+        //         threadId: currThreadId
+        //     }) 
+        // };
 
         try {
-            const response = await fetch("http://localhost:8080/api/chat", options);
-            const res = await response.json();
-            console.log(res);
-            setReply(res.reply);
+            // 🧠 use sendMessage helper so it auto-includes JWT
+            const res = await sendMessage(
+                { message: prompt, threadId: currThreadId },
+                token
+            );
+
+            if (res.reply) {
+                setReply(res.reply);
+            }
 
         }catch (err) {
             console.log(err);
         }
         setLoading(false);
-    }
+    };
 
 
     //Apply new chat to prevChats
@@ -58,6 +90,12 @@ function ChatWindow(){
         setIsOpen(!isOpen);
     }
     
+    // 🆕 Logout logic
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        window.location.href = "/"; // redirect to main guest mode
+    };
+
     return(
         <>
             <div className="chatWindow">
@@ -80,10 +118,21 @@ function ChatWindow(){
                             <i className="fa-solid fa-gear"></i> 
                             Settings
                         </div>
-                        <div className="dropDownItem">
-                            <i className="fa-solid fa-arrow-right-from-bracket"></i> 
+                        {/* 🆕 Logout option */}
+                        {token ? (
+                            <div className="dropDownItem" onClick={handleLogout}>
+                            <i className="fa-solid fa-arrow-right-from-bracket"></i>
                             Log-Out
-                        </div>
+                            </div>
+                        ) : (
+                            <div
+                            className="dropDownItem"
+                            onClick={() => (window.location.href = "/login")}
+                            >
+                            <i className="fa-solid fa-right-to-bracket"></i>
+                            Log-In
+                            </div>
+                        )}
                     </div>
                 }
 
@@ -103,6 +152,7 @@ function ChatWindow(){
                     <p className="info">
                         AskMannyGPT can make mistakes. Check important info. See Cookie Preferences.
                     </p>
+                    <div ref={messagesEndRef} />
                 </div>
             </div>
         </>

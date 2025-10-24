@@ -103,3 +103,28 @@ button:hover {
     background-color: rgba(180, 180, 180, 0.05);
     border-radius: 10px;
 }
+
+/* Sidebar.css guestmode login box */
+.guest-placeholder {
+  background-color: #212121; /* light gray background */
+  color: #fafafa; /* text color */
+  padding: 10px 15px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 14px;
+  margin: 10px 0;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* spacing between icon and text */
+  cursor: pointer;
+}
+
+.guest-placeholder:hover {
+  background-color: #802323 !important; 
+  color: #fafafa;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}

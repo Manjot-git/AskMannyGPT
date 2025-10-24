@@ -1,6 +1,8 @@
 import express from "express";
 import Thread from "../models/Thread.js";
 import getOpenAIAPIResponse from "../utils/openai.js";
+import { authMiddleware } from "../middleware/authMiddleware.js"; // JWT auth middleware
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
@@ -22,10 +24,11 @@ router.post("/test", async(req,res) =>{
 
 // Setting Up Routes-->
 
-//Get all threads
-router.get("/thread", async(req, res) =>{
+//Get all threads (optional: only user threads if authenticated)
+router.get("/thread",authMiddleware, async(req, res) =>{
     try {
-        const threads = await Thread.find({}).sort({updatedAt: -1});
+        const query = req.user ? { userId: req.user.id } : {};
+        const threads = await Thread.find(query).sort({updatedAt: -1});
         //descending order[-1] of updatedAt...most recent data on top
         res.json(threads);
     }catch (err) {
@@ -35,7 +38,7 @@ router.get("/thread", async(req, res) =>{
 });
 
 //Need specific thread
-router.get("/thread/:threadId", async(req,res) =>{
+router.get("/thread/:threadId", authMiddleware, async(req,res) =>{
     const {threadId} = req.params;
 
     try {
@@ -45,6 +48,11 @@ router.get("/thread/:threadId", async(req,res) =>{
             res.status(404).json({error: "Thread not found!"});
         }
 
+        // If user is logged in, only allow their threads
+        if (req.user && thread.userId?.toString() !== req.user.id) {
+            return res.status(403).json({ error: "Access denied!" });
+        }
+        
         res.json(thread.messages);
 
     }catch (err) {
@@ -54,15 +62,20 @@ router.get("/thread/:threadId", async(req,res) =>{
 });
 
 //To Delete any thread
-router.delete("/thread/:threadId", async(req,res) =>{
+router.delete("/thread/:threadId", authMiddleware, async(req,res) =>{
     const {threadId} = req.params;
 
     try {
-        const deletedThread = await Thread.findOneAndDelete({threadId});
+        const deleteThread = await Thread.findOne({ threadId });
 
-        if(!deletedThread) {
-            res.status(404).json({error: "Thread not found!"});
+        if (!deleteThread) return res.status(404).json({ error: "Thread not found!" });
+
+        // Only allow deletion if user owns it
+        if (req.user && deleteThread.userId?.toString() !== req.user.id) {
+            return res.status(403).json({ error: "Access denied!" });
         }
+
+        await deleteThread.deleteOne();
 
         res.status(200).json({success: "Thread deleted successfully"});
 
@@ -81,16 +94,33 @@ router.post("/chat", async(req,res) => {
     }
 
     try {
+        // ✅ Try to decode token if present (optional for guests)
+        let user = null;
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+        try {
+            const token = authHeader.split(" ")[1];
+            user = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (err) {
+            console.log("Invalid or expired token, continuing as guest");
+        }
+        }
+
         let thread = await Thread.findOne({threadId});
 
         if(!thread) {
-            //create a new thread in Db
+            // Create new thread, attach userId if logged in
             thread = new Thread({
                 threadId,
                 title: message,
+                userId: user?.id || null, // optional for guests                
                 messages: [{role: "user", content: message}]
             });
         }else {
+            // If thread exists and is user-owned, only allow the owner
+            if (req.user && thread.userId?.toString() !== req.user.id) {
+                return res.status(403).json({ error: "Access denied!" });
+            }
             thread.messages.push({role: "user", content: message});
         }
 

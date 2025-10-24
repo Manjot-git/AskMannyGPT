@@ -23,6 +23,11 @@ const ThreadSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
+    userId: { // NEW: optional userId to link threads to a user
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null, // null for guests
+    },
     title: {
         type: String,
         default: "New Chat", 
