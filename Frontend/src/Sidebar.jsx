@@ -4,6 +4,11 @@ import { MyContext } from "./MyContext.jsx";
 import { v1 as uuidv1 } from "uuid"; 
 import { useNavigate } from "react-router-dom"; 
 
+const BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:8080"  // remove /api here
+    : process.env.REACT_APP_BACKEND_DEPLOY_URL;
+
 function Sidebar(){
     const navigate = useNavigate();  
     const {allThreads, setAllThreads, currThreadId, setNewChat, setPrompt, setReply, setCurrThreadId, setPrevChats} = useContext(MyContext);
@@ -13,7 +18,7 @@ function Sidebar(){
     const getAllThreads = async () => {
         try {
             if (!token) return; // skip if guest
-            const response = await fetch("http://localhost:8080/api/thread" , {
+            const response = await fetch(`${BASE_URL}/api/thread` , {
             headers: { Authorization: `Bearer ${token}` }
             });
             const res = await response.json();
@@ -48,7 +53,7 @@ function Sidebar(){
         setCurrThreadId(newThreadId);
 
         try {
-            const response = await fetch(`http://localhost:8080/api/thread/${newThreadId}` , {
+            const response = await fetch(`${BASE_URL}/api/thread/${newThreadId}` , {
             headers: { Authorization: `Bearer ${token}` } // 🆕 include token
             });
             const res = await response.json();
@@ -68,7 +73,7 @@ function Sidebar(){
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/api/thread/${threadId}`, {method: "DELETE",
+            const response = await fetch(`${BASE_URL}/api/thread/${threadId}`, {method: "DELETE",
             headers: { Authorization: `Bearer ${token}` }
             });
             const res = await response.json();

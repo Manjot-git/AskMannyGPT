@@ -13,7 +13,10 @@ const PORT = 8080;
 // --- Middleware ---
 app.use(express.json());
 app.use(cors({
-  origin: "http://localhost:5173", // frontend origin
+  origin: [
+    "http://localhost:5173",     // local frontend origin
+    process.env.FRONTEND_DEPLOY_URL,   //deployed frontend
+  ],
 }));
 
 // --- Routes ---
