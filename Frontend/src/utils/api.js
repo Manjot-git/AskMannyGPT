@@ -1,7 +1,7 @@
 const BASE_URL =
   window.location.hostname === "localhost"
     ? "http://localhost:8080/api"
-    : `${process.env.REACT_APP_BACKEND_DEPLOY_URL}/api` ;
+    : `${import.meta.env.VITE_API_URL}/api` ;
 
 // 🧠 AUTH
 export const signup = async (data) => {

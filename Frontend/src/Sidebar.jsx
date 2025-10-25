@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 const BASE_URL =
   window.location.hostname === "localhost"
     ? "http://localhost:8080"  // remove /api here
-    : process.env.REACT_APP_BACKEND_DEPLOY_URL;
+    : VITE_API_URL;
 
 function Sidebar(){
     const navigate = useNavigate();  
