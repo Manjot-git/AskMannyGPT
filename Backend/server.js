@@ -12,12 +12,26 @@ const PORT = 8080;
 
 // --- Middleware ---
 app.use(express.json());
+// app.use(cors({
+//   origin: [
+//     "http://localhost:5173",     // local frontend origin
+//     process.env.FRONTEND_DEPLOY_URL,   //deployed frontend
+//   ],
+// }));
+
+const allowedOrigins = ["http://localhost:5173", process.env.FRONTEND_DEPLOY_URL];
+
 app.use(cors({
-  origin: [
-    "http://localhost:5173",     // local frontend origin
-    process.env.FRONTEND_DEPLOY_URL,   //deployed frontend
-  ],
+  origin: function(origin, callback){
+    if(!origin) return callback(null, true);
+    if(allowedOrigins.indexOf(origin) === -1){
+      return callback(new Error("CORS not allowed"), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
 }));
+
 
 // --- Routes ---
 app.use("/api", chatRoutes);
