@@ -19,7 +19,7 @@ app.use(express.json());
 //   ],
 // }));
 
-const allowedOrigins = ["http://localhost:5173", process.env.FRONTEND_DEPLOY_URL];
+const allowedOrigins = ["http://localhost:5173", "https://ask-manny-gpt.vercel.app"];
 
 app.use(cors({
   origin: function(origin, callback){
