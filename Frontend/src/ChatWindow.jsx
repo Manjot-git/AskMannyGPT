@@ -4,8 +4,10 @@ import { MyContext } from "./MyContext.jsx";
 import { useContext, useState, useEffect, useRef } from "react";
 import { ScaleLoader } from "react-spinners";
 import { sendMessage, getUserThreads } from "./utils/api"; // 🆕 import backend helpers
+import { useNavigate } from "react-router-dom"; 
 
 function ChatWindow(){
+    const navigate = useNavigate();
     const {prompt, setPrompt, reply, setReply, currThreadId, prevChats, setPrevChats, setNewChat} = useContext(MyContext);
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false); 
