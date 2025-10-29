@@ -127,7 +127,7 @@ function ChatWindow(){
                         ) : (
                             <div
                             className="dropDownItem"
-                            onClick={() => (window.location.href = "/login")}
+                            onClick={() => navigate("/login")}
                             >
                             <i className="fa-solid fa-right-to-bracket"></i>
                             Log-In
